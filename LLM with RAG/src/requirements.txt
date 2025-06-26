@@ -1,0 +1,9 @@
+openai
+langchain>=0.1.14
+faiss-cpu  # Use faiss-gpu if using GPU
+tiktoken
+pypdf  # for loading PDF files
+streamlit  # optional, if building a UI
+python-dotenv  # optional, for environment variable management
+langchain-community
+langchain-chroma
