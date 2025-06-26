@@ -66,7 +66,7 @@ The text is chunked into overlapping sections using `RecursiveCharacterTextSplit
 
 Embeddings are persisted in a Chroma vector store:
 
-- `lmstudio.py` uses the raw Chroma Python client (`chromadb`)
+- `lmstudio.py` uses the raw Chroma Python client (`chromadb`) and you have to run a LLM and embedding model locally using LMStudio (I did on Windows)
 - `main.py` uses `langchain_chroma.Chroma` with built-in LangChain support
 
 Each document chunk is uniquely ID'd and tagged with its source metadata.
@@ -92,7 +92,7 @@ $ python main.py --llm mistral
 Ask a question (or type 'exit'): What is the main contribution of the paper?
 ```
 
-In `lmstudio.py`, the prompt is handcrafted and passed to the model via direct API calls to an OpenAI-compatible server.
+In `lmstudio.py`, the prompt is handcrafted and passed to the model via direct API calls to an OpenAI-compatible server[Which is running locally on LM Studio]
 
 ---
 
