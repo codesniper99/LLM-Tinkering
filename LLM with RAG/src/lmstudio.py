@@ -130,7 +130,49 @@ def get_question_by_text():
     return query
 
 
+def generate_rag_response(query, collection, docs):
+    embedding_response = openai_client.embeddings.create(
+            model="text-embedding-nomic-embed-text-v1.5",
+            input=query,
+            encoding_format="float"
+        )
+    query_embedding = embedding_response.data[0].embedding
+    
+    rag_result = collection.query(
+        n_results=5, 
+        query_embeddings=query_embedding
+        )
+    # print(type(rag_result['documents']))
 
+    # chunks = [doc for doc in rag_result['documents'][0]]
+    chunks = [doc.page_content for doc in docs]
+    context = "\n\n".join(chunks)
+    prompt = f"""You are an expert assistant. Use the following context which is based on a research paper to answer the question which follows it. Context is wrapped in << and >>, question is wrapped by < and >
+    The user's questions will be related to this paper provided in the context.
+
+    Context:
+    <<{context}>>
+
+    Question: <{query}>
+    Answer:"""
+    print(f"Prompt is {prompt}")
+
+    response = openai_client.chat.completions.create(
+        model="google/gemma-3-1b",
+        messages=[
+            {"role": "system", "content": "You are helpful AI Assistant!"},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0,
+        stream=True
+    )
+    print("\n\nAnswer (streaming):\n")
+    for chunk in response:
+        # print(chunk.choices[0].delta.content)
+        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+            token = chunk.choices[0].delta.content
+            # print(token, end="", flush=True)
+            yield token
 
 def get_query_by_audio():
     
@@ -195,73 +237,75 @@ if __name__ == "__main__":
     docs, embeddings = chunk_and_embed_document(pages)
     collection = persist_in_collection(docs=docs, embeddings=embeddings)
 
-    query = get_query_by_audio()
+    # query = get_query_by_audio()
     # # --- Step 6: Ask interactively ---
-    # while True:
-    #     # query = get_question_by_text()
+    while True:
+        query = get_question_by_text()
         
 
         
-    #     if query == "exit":
-    #         break
+        if query == "exit":
+            break
         
-    #     embedding_response = openai_client.embeddings.create(
-    #         model="text-embedding-nomic-embed-text-v1.5",
-    #         input=query,
-    #         encoding_format="float"
-    #     )
-    #     query_embedding = embedding_response.data[0].embedding
+        # generate_rag_response(query=query)
+        embedding_response = openai_client.embeddings.create(
+            model="text-embedding-nomic-embed-text-v1.5",
+            input=query,
+            encoding_format="float"
+        )
+        query_embedding = embedding_response.data[0].embedding
         
-    #     rag_result = collection.query(
-    #         n_results=5, 
-    #         query_embeddings=query_embedding
-    #         )
-    #     # print(type(rag_result['documents']))
+        rag_result = collection.query(
+            n_results=5, 
+            query_embeddings=query_embedding
+            )
+        # print(type(rag_result['documents']))
 
-    #     # chunks = [doc for doc in rag_result['documents'][0]]
-    #     chunks = [doc.page_content for doc in docs]
-    #     context = "\n\n".join(chunks)
-    #     prompt = f"""You are an expert assistant. Use the following context which is based on a research paper to answer the question which follows it. Context is wrapped in << and >>, question is wrapped by < and >
-    #     The user's questions will be related to this paper provided in the context.
+        # chunks = [doc for doc in rag_result['documents'][0]]
+        chunks = [doc.page_content for doc in docs]
+        context = "\n\n".join(chunks)
+        prompt = f"""You are an expert assistant. Use the following context which is based on a research paper to answer the question which follows it. Context is wrapped in << and >>, question is wrapped by < and >
+        The user's questions will be related to this paper provided in the context.
 
-    #     Context:
-    #     <<{context}>>
+        Context:
+        <<{context}>>
 
-    #     Question: <{query}>
-    #     Answer:"""
-    #     print(f"Prompt is {prompt}")
+        Question: <{query}>
+        Answer:"""
+        print(f"Prompt is {prompt}")
 
-    #     response = openai_client.chat.completions.create(
-    #         model="google/gemma-3-1b",
-    #         messages=[
-    #             {"role": "system", "content": "You are helpful AI Assistant!"},
-    #             {"role": "user", "content": prompt},
-    #         ],
-    #         temperature=0,
-    #         stream=True
-    #     )
-    #     streamed_response = ""
-    #     print("\n\nAnswer (streaming):\n")
-    #     for chunk in response:
-    #         # print(chunk.choices[0].delta.content)
-    #         if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-    #             token = chunk.choices[0].delta.content
-    #             print(token, end="", flush=True)
-    #             streamed_response += token
+        response = openai_client.chat.completions.create(
+            model="google/gemma-3-1b",
+            messages=[
+                {"role": "system", "content": "You are helpful AI Assistant!"},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0,
+            stream=True
+        )
+        streamed_response = ""
+        print("\n\nAnswer (streaming):\n")
+        for chunk in response:
+            # print(chunk.choices[0].delta.content)
+            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+                token = chunk.choices[0].delta.content
+                print(token, end="", flush=True)
+                # yield token
+                streamed_response += token
                 
-    #     # print("\n\nResponse received.")
-    #     # print(response)
-    #     # print("\n\n Answer: \n")
-    #     # ai_response = response.choices[0].message.content
-    #     # print(response.choices[0].message.content)
-    #     # print("Response received.")
+        # print("\n\nResponse received.")
+        # print(response)
+        # print("\n\n Answer: \n")
+        # ai_response = response.choices[0].message.content
+        # print(response.choices[0].message.content)
+        # print("Response received.")
 
-    #     # query_embedding_2 = openai_client.embeddings.create(
-    #     #     model="text-embedding-nomic-embed-text-v1.5",
-    #     #     input=ai_response,
-    #     #     encoding_format="float"
-    #     # )
-    #     # rag_result_2 = collection.query(n_results=1, query_embeddings=query_embedding_2.data[0].embedding)
-    #     # chunks_2 = [doc for doc in rag_result_2['documents'][0]]
-    #     # answer = "\n\n".join(chunks_2)
-    #     # print(f"Grounding Reference: {answer}")
+        # query_embedding_2 = openai_client.embeddings.create(
+        #     model="text-embedding-nomic-embed-text-v1.5",
+        #     input=ai_response,
+        #     encoding_format="float"
+        # )
+        # rag_result_2 = collection.query(n_results=1, query_embeddings=query_embedding_2.data[0].embedding)
+        # chunks_2 = [doc for doc in rag_result_2['documents'][0]]
+        # answer = "\n\n".join(chunks_2)
+        # print(f"Grounding Reference: {answer}")
