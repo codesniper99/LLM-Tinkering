@@ -21,7 +21,8 @@ This repository enables semantic search and question-answering on research paper
 - [License](#license)
 
 ---
-
+## Loom recording
+https://www.loom.com/share/e317ef7be6cf4338bf0d58cb0be2a39a?sid=511c6d13-ffa2-4a46-b9a1-d004910ede5b
 ## 🧠 Overview
 
 This project allows users to query research paper PDFs in natural language. It processes the paper, stores chunk embeddings in a Chroma vector database, and retrieves relevant context at query time using LangChain and either OpenAI-compatible APIs (e.g., LM Studio) or HuggingFace models.
